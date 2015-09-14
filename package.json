@@ -1,11 +1,28 @@
 {
   "name": "besix",
   "version": "0.0.1",
-  "description": "Data binding and templating through Web Components",
+  "description": "Front-end data binding and templating through Web Components",
   "main": "besix.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Edward-Lombe/besix.git"
+  },
+  "keywords": [
+    "front",
+    "end",
+    "data",
+    "binding",
+    "templating",
+    "web",
+    "components"
+  ],
   "author": "Edward Lombe <edward.lombe@mycosystems.com.au> (https://github.com/Edward-Lombe)",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Edward-Lombe/besix/issues"
+  },
+  "homepage": "https://github.com/Edward-Lombe/besix#readme"
 }
