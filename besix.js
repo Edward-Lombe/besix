@@ -13,6 +13,7 @@ export default (() => {
   const documentReference = document.querySelector('link[rel=import]').import;
 
   /**
+   *  @constant
    *  This object contains all the references to all of the symbols used
    *  internally. They are used mostly to provide a 'hidden' property on
    *  objects, being that they are non-enumerable, and you need the exact
@@ -46,6 +47,7 @@ export default (() => {
   };
 
   /**
+   *  @constant
    *  Stores methods shared by the Model and Collection classes. The functions
    *  are bound to the scope of the calling class through the use of the '::'
    *  (function bind) operator.
@@ -86,17 +88,25 @@ export default (() => {
     }
   };
 
-  /*
-   *  A fairly non compliant implementation of the EventTarget interface, this
+  /**
+   *  @class
+   *  A slightly non-compliant implementation of the EventTarget interface, this
    *  class is designed to allow you to treat DOM Nodes and standard objects in
    *  the same way when you are adding or removing events.
    */
   class Event {
+
+    /**
+     *
+     */
     constructor() {
       this[symbols.Event.data] = {};
     }
 
-    addEventListener(sEvent, fnHandler, oThis) {
+    /**
+     *
+     */
+    addEventListener(sEvent, fnHandler) {
       let eventData = this[symbols.Event.data];
       // let fnBoundEvent = fnHandler.bind(oThis || this);
       if (typeof eventData[sEvent] === 'undefined') {
@@ -106,6 +116,9 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     dispatchEvent(sEvent, ...eventArgs) {
       let eventData = this[symbols.Event.data];
       if (typeof eventData[sEvent] !== 'undefined') {
@@ -115,6 +128,9 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     removeEventListener(sEvent, fnHandler) {
       let eventData = this[symbols.Event.data];
       eventData[sEvent] = eventData.filter(fnEvent => {
@@ -124,6 +140,7 @@ export default (() => {
   }
 
   /**
+   *  @class
    *  The Tie class is essentially the class that handles all data binding. It
    *  takes one argument, an array. This array contains four arrays, and they
    *  define the event(s) that will 'trigger' a data flow, the source(s) of the
@@ -131,6 +148,21 @@ export default (() => {
    *  destination(s) that the data will be sent to.
    */
   class Tie {
+
+    /**
+     *  @constructs
+     *  @example
+     *  // Bind the value of the input to the selected <div> tag
+     *  let input = docuement.querySelector('input');
+     *  let div = docuement.querySelector('div');
+     *  let tie = new Tie([
+     *    [input, 'change'], // trigger
+     *    [input, 'value'], // source
+     *    [([a]) => a], // modifier
+     *    [div, 'textContent'] // destination
+     *  ]);
+     *  @param {Array} aArguments
+     */
     constructor(aArguments) {
       let [trigger, source, modifier, destination] = [...aArguments];
 
@@ -147,6 +179,10 @@ export default (() => {
 
     }
 
+    /**
+     *  @instance
+     *  Adds all of the triggers to the specified sources
+     */
     addListeners() {
       let trigger = this[symbols.Tie.trigger];
       for (let [target, eventName] of trigger) {
@@ -154,6 +190,10 @@ export default (() => {
       }
     }
 
+    /**
+     *  @instance
+     *  Removes all listeners from the specified sources
+     */
     removeListeners() {
       let trigger = this[symbols.Tie.trigger];
       for (let [target, eventName] of trigger) {
@@ -161,6 +201,11 @@ export default (() => {
       }
     }
 
+    /**
+     *  @instance @event
+     *  The handler used to get the source and set the destination, once the
+     *  has been fired
+     */
     eventHandler(e) {
       let source = this[symbols.Tie.source];
       let modifier = this[symbols.Tie.modifier];
@@ -188,6 +233,17 @@ export default (() => {
       }
     }
 
+    /**
+     *  @static
+     *  Adds a special iterator to an array that makes iteration return two
+     *  indexes at a time
+     *  @example
+     *  let array = Tie.addDoubleIterator([1, 2, 3, 4]);
+     *  // Will log [1, 2] then [3, 4]
+     *  for (let elements of array) {
+     *    console.log(elements);
+     *  }
+     */
     static addDoubleIterator(array) {
       array[Symbol.iterator] = function* () {
         for (let i = 0; i < array.length; i += 2) {
@@ -200,6 +256,7 @@ export default (() => {
   }
 
   /**
+   *  @class
    *  The Model class can be essentially treated as an object that you can add
    *  handlers that listen to its properties and fire events whenever it is
    *  changed. The Model class is also designed to encapsulate as much of its
@@ -209,9 +266,23 @@ export default (() => {
    *  be set with either '.<key>' or '[<key>]' notation.
    */
   class Model extends Event {
+
+    /**
+     *  The getter function for the properties is simply a way to mimic
+     *  instance bound class properties. As the function is a getter function
+     *  it does not show up during enumeration of the object.
+     */
     get properties() { return {}; }
+
+    /**
+     *  The defaults getter is used to represent the initial data content of
+     *  an instance of the Model class.
+     */
     get defaults() { return {}; }
 
+    /**
+     *
+     */
     constructor(oData) {
       super();
       let copyProperties = (base, extend) => {
@@ -228,6 +299,9 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     *[Symbol.iterator]() {
       let data = this[symbols.Model.data];
       for (let key in data) {
@@ -235,10 +309,16 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     fetch() {
       return this::dataMethods.fetch();
     }
 
+    /**
+     *
+     */
     set(sKey, value) {
       let data = this[symbols.Model.data];
       data[sKey] = value;
@@ -257,7 +337,16 @@ export default (() => {
     }
   }
 
+  /**
+   *  @class
+   *  The ModelView class is the view window that sits atop of a Model and is
+   *  in change of the mapping between it and the DOM.
+   */
   class ModelView extends HTMLElement {
+
+    /**
+     *
+     */
     get properties() {
       return {
         Model,
@@ -265,18 +354,26 @@ export default (() => {
       };
     }
 
+    /**
+     *
+     */
     get ties() {
       return [];
     }
 
+    /**
+     *
+     */
     createdCallback() {
-
       let template = documentReference.querySelector(this.properties.template);
       let clone = documentReference.importNode(template.content, true);
       this.createShadowRoot().appendChild(clone);
       this.data = new this.properties.Model();
     }
 
+    /**
+     *
+     */
     attachedCallback() {
       this.ties.map(tie => new Tie(tie));
       for (let key in this.data) {
@@ -284,10 +381,16 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     select(sElement, oOptions) {
       return viewMethods.select.call(this, sElement, oOptions);
     }
 
+    /**
+     *
+     */
     static create(oModel) {
       let ModelView = new this.DOMConstructor();
       if (oModel) { ModelView.data = oModel; }
@@ -295,21 +398,37 @@ export default (() => {
       return ModelView;
     }
 
+    /**
+     *
+     */
     static register(sTag) {
       return viewMethods.register.call(this, sTag);
     }
 
   }
 
+  /**
+   *
+   */
   class Collection extends Event {
+
+    /**
+     *
+     */
     get properties() {
       return { Model };
     }
 
+    /**
+     *
+     */
     get length() {
       return this[symbols.Collection.data].length;
     }
 
+    /**
+     *
+     */
     constructor(aData) {
       super();
       this[symbols.Collection.data] = aData || [];
@@ -320,6 +439,9 @@ export default (() => {
 
     }
 
+    /**
+     *
+     */
     [symbols.Collection.addTriggers]() {
       let data = this[symbols.Collection.data];
       for (let index in data) {
@@ -340,14 +462,23 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     fetch() {
       return this::dataMethods.fetch();
     }
 
+    /**
+     *
+     */
     get() {
       return this[symbols.Collection.data];
     }
 
+    /**
+     *
+     */
     set(aData) {
       this[symbols.Collection.data] = aData;
       this.dispatchEvent(symbols.Collection.length);
@@ -360,30 +491,45 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     pop() {
       let popped = this.get().pop();
       this.dispatchEvent(symbols.Collection.length);
       return popped;
     }
 
+    /**
+     *
+     */
     push(...aElements) {
       let length = this.get().push(...aElements);
       this.dispatchEvent(symbols.Collection.length);
       return length;
     }
 
+    /**
+     *
+     */
     shift() {
       let shifted = this.get().shift();
       this.dispatchEvent(symbols.Collection.length);
       return shifted;
     }
 
+    /**
+     *
+     */
     unshift(...aElements) {
       let length = this.get().unshift(...aElements);
       this.dispatchEvent(symbols.Collection.length);
       return length;
     }
 
+    /**
+     *
+     */
     splice(iStart, iDelete, ...aItems) {
       let removed = this.get().splice(iStart, iDelete, ...aItems);
       this.dispatchEvent(symbols.Collection.length);
@@ -392,7 +538,14 @@ export default (() => {
 
   }
 
+  /**
+   *
+   */
   class CollectionView extends HTMLElement {
+
+    /**
+     *
+     */
     get properties() {
       return {
         Collection, ModelView,
@@ -401,10 +554,16 @@ export default (() => {
       };
     }
 
+    /**
+     *
+     */
     get ties() {
       return [];
     }
 
+    /**
+     *
+     */
     get insertionNode() {
       let insert = this.properties.insert;
       if ('appendChild' in insert) {
@@ -414,6 +573,9 @@ export default (() => {
       }
     }
 
+    /**
+     *
+     */
     createdCallback() {
       let template = documentReference.querySelector(this.properties.template);
       let clone = documentReference.importNode(template.content, true);
@@ -423,6 +585,13 @@ export default (() => {
       this.ties.map(tie => new Tie(tie));
     }
 
+    /**
+     *  @instance
+     *  This method is called each time the length of the collection changes.
+     *  It empties the instertionNode specified in the properties (by default
+     *  it will be the templates <content> tag). It can however be any Object
+     *  that implements the appendChild() DOM method.
+     */
     render() {
       let ModelView = this.properties.ModelView;
       let insertionNode = this.insertionNode;
@@ -435,14 +604,34 @@ export default (() => {
       }
     }
 
+    /**
+     *  @instance
+     *  Borrows the viewMethods.select method and binds it to the correct scope.
+     *  @returns {HTMLElement | null}
+     */
     select(sElement, oOptions) {
       return this::viewMethods.select(sElement, oOptions);
     }
 
+    /**
+     *  @static
+     *  Returns a freshly initialised Node that can be added to the document in
+     *  using standard DOM API's
+     *  @example
+     *  // Adds an empty CollectionView to the body
+     *  document.body.appendChild(CollectionView.create());
+     *  @returns {Node} A new CollectionView node
+     */
     static create() {
       return new this.DOMConstructor();
     }
 
+    /**
+     *  @static
+     *  Simply a proxy to bind the viewMethods.register function to the
+     *  CollectionView scope
+     *  @returns {DOMConstructor} The constructor used to initialise Nodes
+     */
     static register(sTag) {
       return this::viewMethods.register(sTag);
     }

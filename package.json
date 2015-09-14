@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/Edward-Lombe/besix/issues"
   },
-  "homepage": "https://github.com/Edward-Lombe/besix#readme"
+  "homepage": "https://github.com/Edward-Lombe/besix#readme",
+  "dependencies": {
+    "jsdoc": "^3.3.2"
+  }
 }
