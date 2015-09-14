@@ -1,6 +1,6 @@
 {
   "name": "besix",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Front-end data binding and templating through Web Components",
   "main": "besix.js",
   "scripts": {
@@ -26,6 +26,6 @@
   },
   "homepage": "https://github.com/Edward-Lombe/besix#readme",
   "dependencies": {
-    "jsdoc": "^3.3.2"
+    "webcomponents": "github:webcomponents/webcomponentsjs@^0.7.12"
   }
 }
