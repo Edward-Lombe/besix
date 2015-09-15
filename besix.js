@@ -56,9 +56,9 @@ export default (() => {
    *  return this::dataMethods.fetch();
    */
   const dataMethods = {
-    fetch() {
+    fetch(sURL) {
       return new Promise((resolve, reject) => {
-        let URL = this.properties.URL;
+        let URL = sURL || this.properties.URL;
         let request = new XMLHttpRequest();
         request.overrideMimeType('application/json');
         request.addEventListener('load', function () {
