@@ -312,8 +312,8 @@ export default (() => {
     /**
      *
      */
-    fetch() {
-      return this::dataMethods.fetch();
+    fetch(URL) {
+      return this::dataMethods.fetch(URL);
     }
 
     /**
@@ -465,8 +465,8 @@ export default (() => {
     /**
      *
      */
-    fetch() {
-      return this::dataMethods.fetch();
+    fetch(URL) {
+      return this::dataMethods.fetch(URL);
     }
 
     /**

@@ -1,6 +1,6 @@
 {
   "name": "besix",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Front-end data binding and templating through Web Components",
   "main": "besix.js",
   "scripts": {
