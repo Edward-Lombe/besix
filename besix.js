@@ -281,19 +281,12 @@ export default (() => {
     get defaults() { return {}; }
 
     /**
-     *
+     *  @constructs
      */
     constructor(oData) {
       super();
-      let copyProperties = (base, extend) => {
-        for (let key in extend) {
-          base[key] = extend[key];
-        }
-      };
       let data = this[symbols.Model.data] = {};
-      copyProperties(data, this.defaults);
-      copyProperties(data, oData);
-      // Object.assign(data, this.defaults, oData);
+      Object.assign(data, this.defaults, oData);
       for (let key in data) {
         this.set(key, data[key]);
       }
@@ -521,6 +514,15 @@ export default (() => {
     /**
      *
      */
+    sort(fnCompare) {
+      let sorted = this.get().sort(fnCompare);
+      this.dispatchEvent(symbols.Collection.change);
+      return sorted;
+    }
+
+    /**
+     *
+     */
     unshift(...aElements) {
       let length = this.get().unshift(...aElements);
       this.dispatchEvent(symbols.Collection.length);
@@ -595,6 +597,15 @@ export default (() => {
     render() {
       let ModelView = this.properties.ModelView;
       let insertionNode = this.insertionNode;
+
+      for (let i = 0; i < this.data.length; i++) {
+        let model = this.data[i];
+        let node = instertionNode.childNodes[i];
+        if (model == node.data) {
+          console.log('equal');
+        }
+      }
+
       while (insertionNode.firstChild) {
         insertionNode.removeChild(insertionNode.lastChild);
       }
