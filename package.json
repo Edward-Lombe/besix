@@ -1,6 +1,6 @@
 {
   "name": "besix",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Front-end data binding and templating through Web Components",
   "main": "besix.js",
   "scripts": {
@@ -34,7 +34,6 @@
     "format": "es6",
     "directories": {},
     "dependencies": {
-      "webcomponents": "github:webcomponents/webcomponentsjs@^0.7.12"
     },
     "devDependencies": {
       "babel": "npm:babel-core@^5.8.22",
