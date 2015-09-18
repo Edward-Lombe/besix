@@ -24,7 +24,7 @@ export default (() => {
       data : Symbol('Event.data')
     },
     Tie : {
-      data : Symbol('Tie.data'),
+      boundHandler : Symbol('Tie.boundHandler'),
       handlers : Symbol('Tie.handlers'),
       trigger : Symbol('Tie.trigger'),
       source : Symbol('Tie.source'),
@@ -133,7 +133,7 @@ export default (() => {
      */
     removeEventListener(sEvent, fnHandler) {
       let eventData = this[symbols.Event.data];
-      eventData[sEvent] = eventData.filter(fnEvent => {
+      eventData[sEvent] = eventData[sEvent].filter(fnEvent => {
         return fnHandler !== fnEvent;
       });
     }
@@ -164,7 +164,9 @@ export default (() => {
      *  @param {Array} aArguments
      */
     constructor(aArguments) {
-      let [trigger, source, modifier, destination] = [...aArguments];
+      let [trigger, source, modifier, destination] = aArguments;
+
+      this[symbols.Tie.boundHandler] = this.eventHandler.bind(this);
 
       this[symbols.Tie.trigger] = trigger;
       this[symbols.Tie.source] = source;
@@ -186,7 +188,7 @@ export default (() => {
     addListeners() {
       let trigger = this[symbols.Tie.trigger];
       for (let [target, eventName] of trigger) {
-        target.addEventListener(eventName, ::this.eventHandler);
+        target.addEventListener(eventName, this[symbols.Tie.boundHandler]);
       }
     }
 
@@ -197,7 +199,7 @@ export default (() => {
     removeListeners() {
       let trigger = this[symbols.Tie.trigger];
       for (let [target, eventName] of trigger) {
-        target.removeEventListener(eventName, this.eventHandler);
+        target.removeEventListener(eventName, this[symbols.Tie.boundHandler]);
       }
     }
 
@@ -314,20 +316,37 @@ export default (() => {
      */
     set(sKey, value) {
       let data = this[symbols.Model.data];
-      data[sKey] = value;
-      Object.defineProperty(this, sKey, {
-        configurable : true,
-        enumerable : true,
-        get : function () {
-          return data[sKey];
-        },
-        set : function (value) {
-          data[sKey] = value;
-          this.dispatchEvent(symbols.Model.change, sKey, value);
-          this.dispatchEvent(sKey, value);
+      let setProperty = (key, value) => {
+        if (this.hasOwnProperty(key)) {
+          this[key] = value;
+          return;
         }
-      });
+        Object.defineProperty(this, key, {
+          configurable : true,
+          enumerable : true,
+          get : function () {
+            return data[key];
+          },
+          set : function (value) {
+            data[sKey] = value;
+            this.dispatchEvent(symbols.Model.change, key, value);
+            this.dispatchEvent(key, value);
+          }
+        });
+        this[key] = value;
+      };
+      // Set a single key
+      if (typeof sKey === 'string' && value) {
+        setProperty(sKey, value);
+      // Set multiple keys
+      } else if (typeof sKey === 'object' && sKey !== null) {
+        let values = sKey;
+        for (let key in values) {
+          setProperty(key, values[key]);
+        }
+      }
     }
+
   }
 
   /**
@@ -362,13 +381,14 @@ export default (() => {
       let clone = documentReference.importNode(template.content, true);
       this.createShadowRoot().appendChild(clone);
       this.data = new this.properties.Model();
+
     }
 
     /**
      *
      */
     attachedCallback() {
-      this.ties.map(tie => new Tie(tie));
+      this[symbols.ModelView.ties] = this.ties.map(tie => new Tie(tie));
       for (let key in this.data) {
         this.data.dispatchEvent(key, this.data[key]);
       }
@@ -379,6 +399,22 @@ export default (() => {
      */
     select(sElement, oOptions) {
       return viewMethods.select.call(this, sElement, oOptions);
+    }
+
+
+    /**
+     *
+     */
+    linkModel(oModel) {
+      if (oModel == this.data) { return; }
+
+      let ties = this[symbols.ModelView.ties];
+      ties.forEach(tie => tie.removeListeners());
+      this.data = oModel;
+      this[symbols.ModelView.ties] = this.ties.map(tie => new Tie(tie));
+      for (let key in this.data) {
+        this.data.dispatchEvent(key, this.data[key]);
+      }
     }
 
     /**
@@ -479,8 +515,8 @@ export default (() => {
 
     *[Symbol.iterator]() {
       let data = this[symbols.Collection.data];
-      for (let model of data) {
-        yield model;
+      for (var i = 0; i < data.length; i++) {
+        yield data[i];
       }
     }
 
@@ -538,6 +574,10 @@ export default (() => {
       return removed;
     }
 
+    indexOf(value) {
+      return this.get().indexOf(value);
+    }
+
   }
 
   /**
@@ -583,6 +623,7 @@ export default (() => {
       let clone = documentReference.importNode(template.content, true);
       this.createShadowRoot().appendChild(clone);
       this.data = new this.properties.Collection();
+      this.render();
       this.data.addEventListener(symbols.Collection.length, ::this.render);
       this.ties.map(tie => new Tie(tie));
     }
@@ -590,29 +631,31 @@ export default (() => {
     /**
      *  @instance
      *  This method is called each time the length of the collection changes.
-     *  It empties the instertionNode specified in the properties (by default
+     *  It empties the insertionNode specified in the properties (by default
      *  it will be the templates <content> tag). It can however be any Object
      *  that implements the appendChild() DOM method.
      */
     render() {
       let ModelView = this.properties.ModelView;
       let insertionNode = this.insertionNode;
+      let childNodes = insertionNode.childNodes;
+
+      // Remove nodes outside the bounds of the data
+      while (childNodes.length > this.data.length) {
+        insertionNode
+          .removeChild(insertionNode.childNodes.item(insertionNode.lastChild));
+      }
 
       for (let i = 0; i < this.data.length; i++) {
         let model = this.data[i];
-        let node = instertionNode.childNodes[i];
-        if (model == node.data) {
-          console.log('equal');
+        if (childNodes[i] instanceof ModelView) {
+          childNodes[i].linkModel(model);
+        } else {
+          let node = ModelView.create(model);
+          this.insertionNode.appendChild(node);
         }
       }
 
-      while (insertionNode.firstChild) {
-        insertionNode.removeChild(insertionNode.lastChild);
-      }
-      for (let model of this.data) {
-        let node = ModelView.create(model);
-        this.insertionNode.appendChild(node);
-      }
     }
 
     /**
@@ -629,7 +672,7 @@ export default (() => {
      *  Returns a freshly initialised Node that can be added to the document in
      *  using standard DOM API's
      *  @example
-     *  // Adds an empty CollectionView to the body
+     *  // Adds an empty View to the body
      *  document.body.appendChild(CollectionView.create());
      *  @returns {Node} A new CollectionView node
      */
